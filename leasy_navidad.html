@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feliz Navidad - Equipo Ops Leasy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- ESTILOS CSS (DISEÑO) --- */
+        :root {
+            --gold: #F8B229;
+            --red: #D42426;
+            --green-dark: #0F3624;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--green-dark);
+            /* Fondo con degradado radial suave */
+            background-image: radial-gradient(circle at center, #1a5c3d 0%, #0F3624 100%);
+            font-family: 'Roboto', sans-serif;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        /* Canvas para la nieve (se superpone al fondo pero detrás del contenido) */
+        #snowCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Detrás del contenido */
+            pointer-events: none;
+        }
+
+        /* Botón de Música */
+        .music-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            padding: 10px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .music-control:hover {
+            background: var(--gold);
+            color: var(--green-dark);
+            transform: scale(1.05);
+        }
+
+        /* Animación de entrada del contenido */
+        .container {
+            max-width: 800px;
+            padding: 40px 20px;
+            margin-top: 40px;
+            opacity: 0; /* Empieza invisible */
+            transform: translateY(30px); /* Empieza más abajo */
+            transition: all 1s ease-out;
+        }
+
+        /* Clase que JS añadirá para mostrar el contenido */
+        .container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 4rem;
+            margin-bottom: 5px;
+            color: var(--gold);
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 0;
+            color: #e0e0e0;
+        }
+
+        /* El marco de la foto */
+        .photo-frame {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            transform: rotate(-3deg);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            margin: 30px auto;
+        }
+
+        .photo-frame:hover {
+            transform: rotate(0deg) scale(1.03);
+        }
+
+        .team-photo {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            display: block;
+        }
+
+        .message-box {
+            background-color: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 40px;
+            border: 1px solid rgba(248, 178, 41, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        p {
+            font-size: 1.3rem;
+            line-height: 1.7;
+        }
+
+        .signature {
+            margin-top: 30px;
+            font-size: 1.1rem;
+            color: var(--gold);
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop>
+        <source src="musica/all_i_want_.mp3" type="audio/mpeg">
+        Tu navegador no soporta audio HTML5.
+    </audio>
+
+    <button id="musicBtn" class="music-control">
+        <span>🎵</span> Play Música
+    </button>
+
+    <canvas id="snowCanvas"></canvas>
+
+
+    <div class="container" id="mainContainer">
+        <h1>¡Feliz Navidad!</h1>
+        <h2>Equipo de Operaciones Leasy</h2>
+
+        <div class="photo-frame">
+            <img src="fotos/equipo_ops.jpeg" alt="Equipo Leasy" class="team-photo">
+        </div>
+
+        <div class="message-box">
+            <p>
+                A todo el equipo de Operaciones: gracias por la increíble energía y dedicación que han puesto este año. Somos el motor que impulsa a Leasy.
+                <br><br>
+                Que estas fiestas estén llenas de alegría, descanso y momentos inolvidables con sus familias. ¡Recarguen energías para un 2026 espectacular!
+            </p>
+            <div class="signature">
+                Con aprecio, <strong>L.</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. ANIMACIÓN DE ENTRADA SUAVE
+        window.onload = function() {
+            const container = document.getElementById('mainContainer');
+            // Añadimos la clase que hace visible el contenido poco después de cargar
+            setTimeout(() => {
+                container.classList.add('visible');
+            }, 300);
+            // Iniciamos la nieve
+            initSnow();
+        };
+
+
+        // 2. CONTROL DE MÚSICA
+        const musicBtn = document.getElementById('musicBtn');
+        const bgMusic = document.getElementById('bgMusic');
+        let isPlaying = false;
+
+        musicBtn.addEventListener('click', function() {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicBtn.innerHTML = '<span>🎵</span> Play Música';
+                isPlaying = false;
+            } else {
+                // Intentamos reproducir (a veces requiere interacción del usuario primero)
+                bgMusic.play().then(() => {
+                    musicBtn.innerHTML = '<span>⏸️</span> Pausar';
+                    isPlaying = true;
+                }).catch(error => {
+                    console.log("Error al reproducir audio:", error);
+                    alert("Toca de nuevo para activar el sonido.");
+                });
+            }
+        });
+
+
+        // 3. EFECTO DE NIEVE CON CANVAS (JavaScript puro)
+        function initSnow() {
+            const canvas = document.getElementById('snowCanvas');
+            const ctx = canvas.getContext('2d');
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Configuración de los copos
+            const maxFlakes = 100; // Cantidad de nieve
+            const flakes = [];
+
+            // Crear los copos iniciales
+            for (let i = 0; i < maxFlakes; i++) {
+                flakes.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 3 + 1, // Tamaño variable
+                    density: Math.random() * maxFlakes, // Para variar la velocidad de caída
+                    opacity: Math.random() * 0.5 + 0.3 // Transparencia
+                });
+            }
+
+            // Función para dibujar un frame de la animación
+            function drawSnow() {
+                ctx.clearRect(0, 0, width, height); // Limpiar el canvas
+
+                for (let i = 0; i < maxFlakes; i++) {
+                    const flake = flakes[i];
+                    
+                    // Dibujar el copo (círculo blanco)
+                    ctx.beginPath();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+                    ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Mover el copo hacia abajo
+                    flake.y += Math.pow(flake.density, 2) / 5000 + 1; // Velocidad base + variable
+                    flake.x += Math.sin(flake.y / 100) * 0.5; // Un ligero movimiento lateral
+
+                    // Si el copo llega al fondo, lo mandamos arriba de nuevo
+                    if (flake.y > height) {
+                        flakes[i] = {
+                            x: Math.random() * width,
+                            y: 0 - flake.radius, // Empieza justo arriba de la pantalla
+                            radius: flake.radius,
+                            density: flake.density,
+                            opacity: flake.opacity
+                        };
+                    }
+                }
+                // Pedir al navegador el siguiente frame de animación
+                requestAnimationFrame(drawSnow);
+            }
+
+            drawSnow(); // Iniciar el bucle
+
+            // Ajustar el canvas si cambian el tamaño de la ventana
+            window.addEventListener('resize', function() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            });
+        }
+    </script>
+</body>
+</html>
